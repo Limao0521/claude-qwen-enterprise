@@ -1,0 +1,8 @@
+# Los scripts de Linux deben conservar LF incluso si el repo se clona en Windows.
+*.sh text eol=lf
+*.py text eol=lf
+*.ps1 text eol=crlf
+*.cmd text eol=crlf
+*.md text
+*.json text
+*.yml text eol=lf
