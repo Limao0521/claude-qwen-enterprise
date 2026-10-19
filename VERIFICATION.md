@@ -7,6 +7,7 @@
 | Ajustes y credencial oficiales | PASS | `settings.json` y `.credentials.json` conservaron sus SHA-256 iniciales. |
 | Archivo global `.claude.json` | OBSERVADO | Su SHA-256 cambió durante la auditoría mientras existía una sesión Claude activa. No se editó manualmente ni se restauró para evitar sobrescribir estado concurrente. |
 | Comandos Qwen instalados | PASS | `claude-qwen-status` encontró CLI, endpoint y cinco agentes. |
+| Conectividad básica del host Alibaba | PASS | Resolución A (dos registros) y TCP 443. Esto no prueba autenticación ni `/v1/messages`. |
 | Fallo seguro sin clave | PASS | `claude-qwen-test` terminó con código 2 antes de abrir Claude Code; no apareció un archivo de credenciales Qwen. |
 | Credencial Qwen aislada | PASS local | Prueba de ida y vuelta con una credencial ficticia temporal en Windows Credential Manager; se borró después. La clave real todavía no está inscrita. |
 | OAuth excluido en modo seguro | PASS local | `claude --bare auth status --json` bajo `CLAUDE_CONFIG_DIR` Qwen devolvió `loggedIn=false`, `authMethod=none`; no quedó `.credentials.json` en ese directorio. |
