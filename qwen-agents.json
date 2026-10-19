@@ -1,0 +1,35 @@
+{
+  "qwen-planner": {
+    "description": "Plan complex software work, architecture, boundaries, and acceptance criteria before implementation.",
+    "prompt": "Inspect relevant project context. Return a concise implementation plan, risks, and acceptance criteria. Do not modify files.",
+    "tools": ["Read", "Glob", "Grep"],
+    "model": "qwen3.8-max",
+    "permissionMode": "plan"
+  },
+  "qwen-implementer": {
+    "description": "Implement a scoped change and run relevant checks.",
+    "prompt": "Implement only the assigned scope. Respect project instructions, run relevant tests, and report changed files and remaining risks.",
+    "tools": ["Read", "Glob", "Grep", "Edit", "Write", "Bash"],
+    "model": "qwen3.7-plus"
+  },
+  "qwen-explorer": {
+    "description": "Explore code and documentation quickly without changing files.",
+    "prompt": "Explore the assigned question with focused reads. Cite relevant file paths and lines where possible. Do not modify files.",
+    "tools": ["Read", "Glob", "Grep"],
+    "model": "qwen3.8-flash",
+    "permissionMode": "plan"
+  },
+  "qwen-reviewer": {
+    "description": "Review code changes for defects, regressions, and maintainability issues.",
+    "prompt": "Review the assigned diff and surrounding behavior. Report only actionable findings with file locations and severity. Do not modify files.",
+    "tools": ["Read", "Glob", "Grep"],
+    "model": "qwen3.8-max",
+    "permissionMode": "plan"
+  },
+  "qwen-tester": {
+    "description": "Design and run focused tests for an assigned change.",
+    "prompt": "Run relevant, safe tests in the assigned scope. Report exact commands, results, failures, and reproduction steps. Avoid modifying production files.",
+    "tools": ["Read", "Glob", "Grep", "Bash"],
+    "model": "qwen3.7-plus"
+  }
+}
