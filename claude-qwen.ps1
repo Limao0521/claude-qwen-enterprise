@@ -175,7 +175,10 @@ $cli = (Get-Command claude.exe -ErrorAction Stop).Source
 $changed = @{}
 foreach ($item in Get-ChildItem Env: | Where-Object { $_.Name -like 'ANTHROPIC_*' -or $_.Name -like 'CLAUDE_CODE_USE_*' -or $_.Name -in @('CLAUDE_CONFIG_DIR','CLAUDE_CODE_OAUTH_TOKEN','CLAUDE_CODE_OAUTH_REFRESH_TOKEN','DISABLE_LOGIN_COMMAND','DISABLE_LOGOUT_COMMAND') }) {
   $changed[$item.Name] = $item.Value
-  Remove-Item -Path "Env:$($item.Name)"
+  # SetEnvironmentVariable borra por nombre incluso las entradas de valor vacio.
+  # Remove-Item Env:\ falla sobre esos fantasmas, que aparecen al lanzar de forma
+  # anidada desde una sesion Claude activa (hereda el bloque env del settings).
+  [Environment]::SetEnvironmentVariable($item.Name, $null)
 }
 try {
   $env:CLAUDE_CONFIG_DIR = $config
@@ -193,7 +196,10 @@ try {
   exit $LASTEXITCODE
 } finally {
   foreach ($name in @('CLAUDE_CONFIG_DIR','ANTHROPIC_BASE_URL','ANTHROPIC_API_KEY','ANTHROPIC_MODEL','DISABLE_LOGIN_COMMAND','DISABLE_LOGOUT_COMMAND')) {
-    Remove-Item -Path "Env:$name" -ErrorAction SilentlyContinue
+    [Environment]::SetEnvironmentVariable($name, $null)
   }
-  foreach ($name in $changed.Keys) { Set-Item -Path "Env:$name" -Value $changed[$name] }
+  foreach ($name in $changed.Keys) {
+    $value = [string]$changed[$name]
+    [Environment]::SetEnvironmentVariable($name, $(if ($value.Length -gt 0) { $value } else { $null }))
+  }
 }
