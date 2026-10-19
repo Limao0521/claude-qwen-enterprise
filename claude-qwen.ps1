@@ -188,7 +188,7 @@ try {
   if ($Mode -eq 'test') {
     & (Join-Path $PSScriptRoot 'test-qwen.ps1') -ClaudeExecutable $cli -SettingsPath $settings -AgentsArgument $agentsArgument -Endpoint $endpoint
   } else {
-    & $cli --bare --strict-mcp-config --setting-sources user --settings $settings --agents $agentsArgument --model $env:ANTHROPIC_MODEL @ForwardArgs
+    & $cli --strict-mcp-config --setting-sources user --settings $settings --agents $agentsArgument --model $env:ANTHROPIC_MODEL @ForwardArgs
   }
   exit $LASTEXITCODE
 } finally {

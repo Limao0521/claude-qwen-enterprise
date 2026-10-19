@@ -27,37 +27,51 @@ function Send-Message([object[]]$messages, [object[]]$tools = @(), [object]$tool
   }
   return Invoke-RestMethod -Uri "$Endpoint/v1/messages" -Method Post -Headers $headers -Body ($body | ConvertTo-Json -Depth 20 -Compress) -TimeoutSec 90
 }
-function Find-AgentIds([object]$node, [System.Collections.Generic.HashSet[string]]$ids) {
+function Find-AgentIds([object]$node, [System.Collections.Generic.HashSet[string]]$ids, [System.Collections.Generic.HashSet[string]]$names) {
   if ($node -is [pscustomobject]) {
-    if ($node.type -eq 'tool_use' -and $node.name -eq 'Agent' -and $node.id) {
-      $null = $ids.Add([string]$node.id)
+    if ($node.type -eq 'tool_use' -and $node.name) {
+      $null = $names.Add([string]$node.name)
+      if ($node.name -eq 'Agent' -and $node.id) { $null = $ids.Add([string]$node.id) }
     }
-    foreach ($property in $node.PSObject.Properties) { Find-AgentIds $property.Value $ids }
+    foreach ($property in $node.PSObject.Properties) { Find-AgentIds $property.Value $ids $names }
   } elseif ($node -is [array]) {
-    foreach ($item in $node) { Find-AgentIds $item $ids }
+    foreach ($item in $node) { Find-AgentIds $item $ids $names }
   }
 }
 function Invoke-Claude([string]$prompt, [int]$turns = 6) {
   $priorPreference = $ErrorActionPreference
   $ErrorActionPreference = 'Continue'
   try {
-    $raw = & $ClaudeExecutable --bare --strict-mcp-config --setting-sources user --settings $SettingsPath --agents $AgentsArgument --model qwen3.8-flash --print --output-format stream-json --verbose --no-session-persistence --max-turns $turns --allowedTools 'Read,Write,Bash,Agent' --permission-mode dontAsk $prompt 2>&1
+    $raw = & $ClaudeExecutable --strict-mcp-config --setting-sources user --settings $SettingsPath --agents $AgentsArgument --model qwen3.8-flash --print --output-format stream-json --verbose --no-session-persistence --max-turns $turns --allowedTools 'Read,Write,Bash,Agent' --permission-mode dontAsk $prompt 2>&1
     $exit = $LASTEXITCODE
   } finally { $ErrorActionPreference = $priorPreference }
   $lines = @($raw | ForEach-Object { [string]$_ })
   $ids = [System.Collections.Generic.HashSet[string]]::new()
+  $names = [System.Collections.Generic.HashSet[string]]::new()
+  $availableAgent = $false
+  $finalResult = ''
   foreach ($line in $lines) {
-    try { Find-AgentIds ($line | ConvertFrom-Json -ErrorAction Stop) $ids } catch { }
+    try {
+      $event = $line | ConvertFrom-Json -ErrorAction Stop
+      Find-AgentIds $event $ids $names
+      if ($event.type -eq 'system' -and $event.subtype -eq 'init') { $availableAgent = (@($event.tools) -contains 'Agent') }
+      if ($event.type -eq 'result' -and $event.result) { $finalResult = [string]$event.result }
+    } catch { }
   }
-  return [pscustomobject]@{ ExitCode = $exit; AgentCalls = $ids.Count; Raw = ($lines -join "`n") }
+  $preview = ($finalResult -replace 'sk-[^\s\"]+', '<redacted>')
+  if ($preview.Length -gt 320) { $preview = $preview.Substring(0, 320) }
+  return [pscustomobject]@{ ExitCode = $exit; AgentCalls = $ids.Count; AgentAvailable = $availableAgent; ToolNames = (@($names) -join ','); ResultPreview = $preview; Raw = ($lines -join "`n") }
 }
 
 try {
   try {
     $text = Send-Message @(@{ role='user'; content='Reply with PONG only.' })
-    if ($text.content.Count -gt 0 -and $text.content[0].type -eq 'text') {
+    if (@($text.content | Where-Object { $_.type -eq 'text' -and -not [string]::IsNullOrWhiteSpace($_.text) }).Count -gt 0) {
       Add-Result 'Anthropic Messages authentication and text' 'PASS' 'Authenticated Messages response received.'
-    } else { Add-Result 'Anthropic Messages authentication and text' 'FAIL' 'No text content in response.' }
+    } else {
+      $types = (@($text.content | ForEach-Object { $_.type }) -join ',')
+      Add-Result 'Anthropic Messages authentication and text' 'FAIL' ("No text content; content types=$types; stop_reason=$($text.stop_reason); output_tokens=$($text.usage.output_tokens)")
+    }
   } catch {
     Add-Result 'Anthropic Messages authentication and text' 'FAIL' ("HTTP or protocol error: " + $_.Exception.GetType().Name)
   }
@@ -106,14 +120,14 @@ try {
     $one = Invoke-Claude 'Invoke the qwen-explorer subagent to read input.txt and report its exact marker. Do not read the file yourself. Return the subagent result.' 5
     if ($one.ExitCode -eq 0 -and $one.AgentCalls -ge 1 -and $one.Raw -match 'QWEN-SMOKE-731') {
       Add-Result 'One Qwen subagent' 'PASS' 'Agent tool invocation was observed.'
-    } else { Add-Result 'One Qwen subagent' 'FAIL' 'No Agent tool invocation observed.' }
+    } else { Add-Result 'One Qwen subagent' 'FAIL' ("No Agent tool invocation; exit=$($one.ExitCode); available=$($one.AgentAvailable); tools=$($one.ToolNames); result=$($one.ResultPreview)") }
 
     $two = Invoke-Claude 'Start exactly two independent qwen-explorer subagents concurrently. Agent one reads input.txt; agent two lists files in this directory. Wait for both and summarize. Do not spawn any other agents.' 6
     if ($two.ExitCode -eq 0 -and $two.AgentCalls -ge 2) {
       Add-Result 'Two subagent invocations' 'PASS' 'Two Agent tool invocation events were observed.'
       Add-Result 'Concurrent overlap' 'UNVERIFIED' 'Event overlap requires manual inspection or provider telemetry.'
     } else {
-      Add-Result 'Two subagent invocations' 'FAIL' 'Fewer than two Agent invocation events were observed.'
+      Add-Result 'Two subagent invocations' 'FAIL' ("Fewer than two Agent invocation events; exit=$($two.ExitCode); available=$($two.AgentAvailable); calls=$($two.AgentCalls); tools=$($two.ToolNames); result=$($two.ResultPreview)")
       Add-Result 'Concurrent overlap' 'UNVERIFIED' 'Two successful invocations are required first.'
     }
   } finally { Pop-Location }
@@ -126,6 +140,6 @@ try {
   }
 }
 
-$results | Format-Table -AutoSize
+$results | Format-Table -AutoSize -Wrap
 if (@($results | Where-Object State -eq 'FAIL').Count -gt 0) { exit 1 }
 exit 0
