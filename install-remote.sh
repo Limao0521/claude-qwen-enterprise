@@ -3,16 +3,16 @@
 #  Instalador de un solo comando - claude-qwen (Linux, Ubuntu 20.04+)
 #
 #  Uso (desde cualquier carpeta):
-#    curl -fsSL https://raw.githubusercontent.com/TU-USUARIO/claude-qwen-enterprise/main/install-remote.sh | bash
+#    curl -fsSL https://raw.githubusercontent.com/Limao0521/claude-qwen-enterprise/main/install-remote.sh | bash
 #  o, si no tienes curl:
-#    wget -qO-  https://raw.githubusercontent.com/TU-USUARIO/claude-qwen-enterprise/main/install-remote.sh | bash
+#    wget -qO-  https://raw.githubusercontent.com/Limao0521/claude-qwen-enterprise/main/install-remote.sh | bash
 #
-#  ANTES DE PUBLICAR: edita REPO_OWNER (y REPO_NAME/REPO_BRANCH si hace falta)
-#  con la URL real del repositorio compartido.
+#  Si el repositorio cambia de dueno, nombre o rama, edita REPO_OWNER/
+#  REPO_NAME/REPO_BRANCH y las URLs del README.
 # =============================================================================
 set -euo pipefail
 
-REPO_OWNER='TU-USUARIO'             # <-- EDITAR: usuario u organizacion de GitHub
+REPO_OWNER='Limao0521'
 REPO_NAME='claude-qwen-enterprise'
 REPO_BRANCH='main'
 

@@ -18,13 +18,13 @@ Abre una terminal **normal** (sin administrador/root), pega el comando de tu sis
 **Windows** (PowerShell):
 
 ```powershell
-powershell -NoProfile -Command "irm https://raw.githubusercontent.com/TU-USUARIO/claude-qwen-enterprise/main/install-remote.ps1 | iex"
+powershell -NoProfile -Command "irm https://raw.githubusercontent.com/Limao0521/claude-qwen-enterprise/main/install-remote.ps1 | iex"
 ```
 
 **Linux** (Ubuntu 20.04+):
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/TU-USUARIO/claude-qwen-enterprise/main/install-remote.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Limao0521/claude-qwen-enterprise/main/install-remote.sh | bash
 ```
 
 El instalador copia la app a una ubicación estable de tu usuario y crea los cinco comandos en una carpeta que ya esté (o que agrega) a tu PATH. No modifica tu instalación oficial de Claude ni requiere permisos de administrador.
@@ -139,7 +139,7 @@ El comando oficial `claude` sigue intacto; los comandos Qwen son independientes.
 
 **Nunca** subas a este repositorio una API key ni el archivo de credenciales oficial de Claude.
 
-> **Nota para quien administre el repo:** antes de publicar, reemplaza `TU-USUARIO` por el usuario u organización real en este README, en `install-remote.ps1` (`$RepoOwner`) y en `install-remote.sh` (`REPO_OWNER`). Ambos scripts se niegan a ejecutarse mientras el placeholder siga ahí. Tras editar archivos del lanzador, settings o agentes, vuelve a ejecutar el instalador local en cada máquina para que la copia instalada recoja el cambio.
+> **Nota para quien administre el repo:** los instaladores apuntan a `https://github.com/Limao0521/claude-qwen-enterprise` (rama `main`). Si el repo cambia de dueño, nombre o rama, actualiza este README, `install-remote.ps1` (`$RepoOwner`) e `install-remote.sh` (`REPO_OWNER`). Tras editar archivos del lanzador, settings o agentes, vuelve a ejecutar el instalador local en cada máquina para que la copia instalada recoja el cambio.
 
 ## Fuentes
 

@@ -3,16 +3,16 @@
 #  Instalador de un solo comando - claude-qwen (Claude Code + Qwen Enterprise)
 #
 #  Uso (en PowerShell, desde cualquier carpeta):
-#    powershell -NoProfile -Command "irm https://raw.githubusercontent.com/TU-USUARIO/claude-qwen-enterprise/main/install-remote.ps1 | iex"
+#    powershell -NoProfile -Command "irm https://raw.githubusercontent.com/Limao0521/claude-qwen-enterprise/main/install-remote.ps1 | iex"
 #
-#  ANTES DE PUBLICAR: edita $RepoOwner (y $RepoName/$RepoBranch si hace falta)
-#  con la URL real del repositorio compartido.
+#  Si el repositorio cambia de dueno, nombre o rama, edita $RepoOwner/
+#  $RepoName/$RepoBranch y las URLs del README.
 # =============================================================================
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
 try { Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force } catch { }
 
-$RepoOwner  = 'TU-USUARIO'             # <-- EDITAR: usuario u organizacion de GitHub
+$RepoOwner  = 'Limao0521'
 $RepoName   = 'claude-qwen-enterprise'
 $RepoBranch = 'main'
 
