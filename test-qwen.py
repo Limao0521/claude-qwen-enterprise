@@ -213,7 +213,7 @@ def main():
             try:
                 follow = send_message(args.endpoint, api_key, [
                     {"role": "user", "content": "Call echo_value with value 7, then say done."},
-                    {"role": "assistant", "content": tool_reply.get("content", [])},
+                    {"role": "assistant", "content": (tool_reply or {}).get("content", [])},
                     {"role": "user", "content": [
                         {"type": "tool_result", "tool_use_id": tool_call.get("id"), "content": "7"},
                     ]},
