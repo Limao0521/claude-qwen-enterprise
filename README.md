@@ -1,13 +1,13 @@
-# claude-qwen — Claude Code + Qwen Enterprise (Windows y Linux)
+# claude-qwen — Claude Code + Qwen Enterprise (Windows, Linux y macOS)
 
-Usa Claude Code con los modelos Qwen de Alibaba Model Studio (`qwen3.8-max`, `qwen3.7-plus`, `qwen3.8-flash`) a través del endpoint empresarial de Singapur, sin tocar tu perfil oficial de Claude. Funciona en **Windows 10/11** (PowerShell 5.1+) y en **Linux Ubuntu 20.04 o superior** (bash + python3). Cada persona usa **su propia API key**: este repositorio **no contiene ninguna clave**.
+Usa Claude Code con los modelos Qwen de Alibaba Model Studio (`qwen3.8-max`, `qwen3.7-plus`, `qwen3.8-flash`) a través del endpoint empresarial de Singapur, sin tocar tu perfil oficial de Claude. Funciona en **Windows 10/11** (PowerShell 5.1+), en **Linux Ubuntu 20.04 o superior** y en **macOS 11 o superior** (bash + python3). Cada persona usa **su propia API key**: este repositorio **no contiene ninguna clave**.
 
 ## Requisitos previos
 
-1. **Windows 10/11** con PowerShell 5.1+ (el que viene con Windows), o **Ubuntu 20.04+** con bash y python3 (ya vienen instalados; si falta python3: `sudo apt install python3`).
+1. **Windows 10/11** con PowerShell 5.1+ (el que viene con Windows), **Ubuntu 20.04+** con bash y python3 (ya vienen instalados; si falta python3: `sudo apt install python3`), o **macOS 11+** con bash y python3 (bash ya viene; si falta python3: `xcode-select --install`).
 2. Claude Code instalado (`claude --version` debe responder). Si no lo tienes:
    - Windows: `powershell -NoProfile -Command "irm https://claude.ai/install.ps1 | iex"`
-   - Linux: `curl -fsSL https://claude.ai/install.sh | bash`
+   - Linux y macOS: `curl -fsSL https://claude.ai/install.sh | bash`
    - Alternativa con Node: `npm install -g @anthropic-ai/claude-code`
 3. Tu API key de Alibaba Model Studio para el workspace empresarial de Singapur (pídela al administrador del workspace).
 
@@ -21,7 +21,7 @@ Abre una terminal **normal** (sin administrador/root), pega el comando de tu sis
 powershell -NoProfile -Command "irm https://raw.githubusercontent.com/Limao0521/claude-qwen-enterprise/main/install-remote.ps1 | iex"
 ```
 
-**Linux** (Ubuntu 20.04+):
+**Linux** (Ubuntu 20.04+) **y macOS**:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/Limao0521/claude-qwen-enterprise/main/install-remote.sh | bash
@@ -29,12 +29,12 @@ curl -fsSL https://raw.githubusercontent.com/Limao0521/claude-qwen-enterprise/ma
 
 El instalador copia la app a una ubicación estable de tu usuario y crea los cinco comandos en una carpeta que ya esté (o que agrega) a tu PATH. No modifica tu instalación oficial de Claude ni requiere permisos de administrador.
 
-| | Windows | Linux |
-|---|---|---|
-| App | `%LOCALAPPDATA%\ClaudeQwenEnterprise\app` | `~/.local/share/claude-qwen-enterprise/app` |
-| Comandos | `%USERPROFILE%\.local\bin\*.cmd` | `~/.local/bin/*` |
-| Clave | Administrador de credenciales de Windows | Keyring libsecret (`secret-tool`) o `~/.config/claude-qwen-enterprise/api-key` con permisos 600 |
-| Perfil Claude Code | `%LOCALAPPDATA%\ClaudeQwenEnterprise\claude-config` | `~/.local/share/claude-qwen-enterprise/claude-config` |
+| | Windows | Linux | macOS |
+|---|---|---|---|
+| App | `%LOCALAPPDATA%\ClaudeQwenEnterprise\app` | `~/.local/share/claude-qwen-enterprise/app` | igual que Linux |
+| Comandos | `%USERPROFILE%\.local\bin\*.cmd` | `~/.local/bin/*` | igual que Linux |
+| Clave | Administrador de credenciales de Windows | Keyring libsecret (`secret-tool`) o `~/.config/claude-qwen-enterprise/api-key` con permisos 600 | Keychain de inicio de sesión (`security`) o `~/.config/claude-qwen-enterprise/api-key` con permisos 600 |
+| Perfil Claude Code | `%LOCALAPPDATA%\ClaudeQwenEnterprise\claude-config` | `~/.local/share/claude-qwen-enterprise/claude-config` | igual que Linux |
 
 **Alternativa local** (si te pasaron la carpeta o el zip del repo): descomprime, entra en la carpeta y ejecuta:
 
@@ -44,9 +44,11 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\install.ps1
 ```
 
 ```bash
-# Linux
+# Linux y macOS
 bash ./install.sh
 ```
+
+> **Nota macOS:** el soporte de macOS (Keychain, PATH de zsh, compatibilidad con bash 3.2) se desarrolló y verificó con pruebas simuladas desde Windows; pendiente aún de una validación completa en un Mac real. Los comandos y rutas son los mismos que en Linux.
 
 ## Alta de tu clave (una sola vez)
 
@@ -87,15 +89,15 @@ El comando oficial `claude` sigue intacto; los comandos Qwen son independientes.
 
 ## Cómo funciona y qué aislamiento tiene
 
-- El lanzador abre un proceso separado, borra las variables `ANTHROPIC_*` y `CLAUDE_*` heredadas, fija el endpoint empresarial y pasa la clave **solo al proceso de Claude Code** como `ANTHROPIC_API_KEY` (en Linux el shell del lanzador es reemplazado por `exec`; en Windows el proceso padre restaura su entorno al terminar). Nada queda en archivos del proyecto.
+- El lanzador abre un proceso separado, borra las variables `ANTHROPIC_*` y `CLAUDE_*` heredadas, fija el endpoint empresarial y pasa la clave **solo al proceso de Claude Code** como `ANTHROPIC_API_KEY` (en Linux/macOS el shell del lanzador es reemplazado por `exec`; en Windows el proceso padre restaura su entorno al terminar). Nada queda en archivos del proyecto.
 - Claude Code corre con su propio `CLAUDE_CONFIG_DIR`, `--strict-mcp-config` (no carga tus servidores MCP) y `--setting-sources user`. `qwen-settings.json` desactiva el descubrimiento automático de `CLAUDE.md` y la memoria automática, y el lanzador rechaza `--settings`, `--setting-sources` y `--fallback-model` enviados por el usuario para que el routing al proveedor sea siempre explícito.
 - Tu perfil oficial (`~/.claude`, `.claude.json`, `claude`) no se lee ni se modifica; los ajustes locales y compartidos de cada repositorio se excluyen para que nada pueda cambiar la clave o el proveedor.
-- Límite conocido: la clave viaja como variable de entorno del proceso Claude Code y sus subprocesos; procesos del mismo usuario con permisos suficientes podrían inspeccionarla. Evita ejecutar comandos no confiables dentro de una sesión Qwen. En Linux sin keyring gráfico, la clave queda en un archivo con permisos 600 (equivalente a lo que hacen npm, docker y otras CLI).
+- Límite conocido: la clave viaja como variable de entorno del proceso Claude Code y sus subprocesos; procesos del mismo usuario con permisos suficientes podrían inspeccionarla. Evita ejecutar comandos no confiables dentro de una sesión Qwen. En Linux sin keyring gráfico, o si el Keychain de macOS no está disponible, la clave queda en un archivo con permisos 600 (equivalente a lo que hacen npm, docker y otras CLI).
 - Si un proyecto necesita sus instrucciones o MCP, incorpóralas explícitamente al prompt o a un archivo de prompts; no se copia nada automáticamente desde tu perfil oficial.
 
 ## Diagnóstico
 
-1. **El comando no aparece tras instalar** → abre una terminal NUEVA; si sigue sin aparecer comprueba tu PATH: en Windows `%USERPROFILE%\.local\bin`, en Linux `~/.local/bin` (el instalador agrega la línea a `~/.profile` y `~/.bashrc`).
+1. **El comando no aparece tras instalar** → abre una terminal NUEVA; si sigue sin aparecer comprueba tu PATH: en Windows `%USERPROFILE%\.local\bin`, en Linux/macOS `~/.local/bin` (el instalador agrega la línea a `~/.profile` y `~/.bashrc` en Linux, o a `~/.zprofile`, `~/.zshrc` y `~/.bash_profile` en macOS).
 2. **Falta la clave** → ejecuta `claude-qwen-auth` en una terminal interactiva.
 3. **HTTP 401** → la clave debe ser del mismo workspace y región que el host configurado. Rótala con `claude-qwen-auth`.
 4. **404 en `/v1/models`** → ese catálogo no existe en la interfaz Anthropic de Alibaba; usa los IDs explícitos. Un 404 en `/v1/messages` sí indica un problema del endpoint.
@@ -103,6 +105,7 @@ El comando oficial `claude` sigue intacto; los comandos Qwen son independientes.
 6. **Falla un agente** → revisa `qwen-agents.json`, la salida de `claude-qwen-test` y el límite de solicitudes del workspace. Empieza con máximo dos agentes.
 7. **Windows: scripts bloqueados por política de ejecución** (equipos administrados) → usa la alternativa local con `-ExecutionPolicy Bypass` o consulta a tu administrador.
 8. **Linux: errores TLS/-certificados** → instala certificados: `sudo apt install ca-certificates`. `claude-qwen-test` necesita `python3`.
+9. **macOS: `python3` no aparece** → ejecuta `xcode-select --install`. **Terminal pide permiso para acceder al Keychain** la primera vez que `claude-qwen-auth`/`claude-qwen` usan la clave → permite el acceso (o marca "Permitir siempre").
 
 `claude-qwen-status` solo comprueba archivos y almacenamiento de credenciales; no prueba el servicio. `claude-qwen-test` usa una carpeta temporal fuera de repositorios, hace llamadas a `/v1/messages`, una prueba de herramientas, una continuación multivuelta y sesiones CLI con uno y dos subagentes; resume resultados sin imprimir la clave y borra su carpeta temporal al terminar. El solapamiento real de dos agentes se informa como **no verificado** si no hay evidencia de concurrencia.
 
@@ -117,7 +120,7 @@ El comando oficial `claude` sigue intacto; los comandos Qwen son independientes.
    ```
 
    ```bash
-   # Linux
+   # Linux y macOS
    bash "$HOME/.local/share/claude-qwen-enterprise/app/install.sh" --remove
    ```
 
@@ -129,12 +132,12 @@ El comando oficial `claude` sigue intacto; los comandos Qwen son independientes.
 |---|---|
 | `install-remote.ps1` / `install-remote.sh` | Instaladores de un comando: descargan el repo y ejecutan el instalador local. |
 | `install.ps1` / `install.sh` | Instalan o retiran comandos y copian la app a la ubicación estable. |
-| `claude-qwen.ps1` / `claude-qwen.sh` | Lanzador, alta/baja de clave, estado y smoke test (Windows / Linux). |
+| `claude-qwen.ps1` / `claude-qwen.sh` | Lanzador, alta/baja de clave, estado y smoke test (Windows / Linux y macOS). |
 | `test-qwen.ps1` / `test-qwen.py` | Pruebas de extremo a extremo (las ejecuta `claude-qwen-test`). |
 | `qwen-settings.json` | Routing del proveedor y variables de aislamiento (sin secretos; compartido por ambos SO). |
 | `qwen-agents.json` | Definición JSON de los cinco subagentes (compartido). |
 | `agents/*.md` | Definiciones Markdown de los subagentes (compartidas). |
-| `.gitattributes` | Fuerza LF en los scripts de Linux aunque el repo se clone en Windows. |
+| `.gitattributes` | Fuerza LF en los scripts de Linux/macOS aunque el repo se clone en Windows. |
 | `VERIFICATION.md` | Auditoría histórica de la instalación original en Windows (19-oct-2026). |
 
 **Nunca** subas a este repositorio una API key ni el archivo de credenciales oficial de Claude.

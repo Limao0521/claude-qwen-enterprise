@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 # =============================================================================
 #  claude-qwen - lanzador de Claude Code + Qwen Enterprise para Linux
-#  (Ubuntu 20.04 o superior). Modos: launch | fast | auth | status | test | selftest
+#  (Ubuntu 20.04 o superior) y macOS (11 o superior). Compatible con bash 3.2,
+#  el que trae macOS por defecto. Modos: launch | fast | auth | status | test | selftest
 #
-#  La clave empresarial NUNCA se escribe en este proyecto: se guarda en el
-#  keyring (secret-tool/libsecret) si esta disponible, o en
+#  La clave empresarial NUNCA se escribe en este proyecto: en macOS se guarda
+#  en el Keychain de inicio de sesion (comando security); en Linux, en el
+#  keyring (secret-tool/libsecret) si esta disponible; como respaldo, en
 #  ~/.config/claude-qwen-enterprise/api-key con permisos 600. Solo el proceso
 #  de Claude Code la recibe, via variable de entorno, mediante exec (este
 #  shell desaparece al lanzarlo).
@@ -27,12 +29,19 @@ ENDPOINT='https://llm-kcqiiw0if0n8a3fc.ap-southeast-1.maas.aliyuncs.com/apps/ant
 KEYFILE="$HOME/.config/claude-qwen-enterprise/api-key"
 SECRET_ATTR='application'
 SECRET_VAL='claude-qwen-enterprise'
+KC_SERVICE='claude-qwen-enterprise'
+KC_LABEL='Claude Qwen Enterprise API key (Alibaba Singapore)'
+OS="$(uname -s)"
 
-have_secret_tool() { command -v secret-tool >/dev/null 2>&1; }
+kc_account() { printf '%s' "${USER:-$(id -un)}"; }
+have_keychain() { [ "$OS" = Darwin ] && command -v security >/dev/null 2>&1; }
+have_secret_tool() { [ "$OS" != Darwin ] && command -v secret-tool >/dev/null 2>&1; }
 
 read_key() {
   local key=''
-  if have_secret_tool; then
+  if have_keychain; then
+    key="$(security find-generic-password -a "$(kc_account)" -s "$KC_SERVICE" -w 2>/dev/null || true)"
+  elif have_secret_tool; then
     key="$(secret-tool lookup "$SECRET_ATTR" "$SECRET_VAL" 2>/dev/null || true)"
   fi
   if [ -z "$key" ] && [ -f "$KEYFILE" ]; then
@@ -44,7 +53,10 @@ read_key() {
 
 save_key() {
   local key="$1"
-  if have_secret_tool && printf '%s' "$key" | secret-tool store --label='Claude Qwen Enterprise API key (Alibaba Singapore)' "$SECRET_ATTR" "$SECRET_VAL" >/dev/null 2>&1; then
+  if have_keychain && security add-generic-password -U -a "$(kc_account)" -s "$KC_SERVICE" -l "$KC_LABEL" -w "$key" >/dev/null 2>&1; then
+    rm -f "$KEYFILE"
+    echo 'Clave guardada en el Keychain de macOS (login).'
+  elif have_secret_tool && printf '%s' "$key" | secret-tool store --label="$KC_LABEL" "$SECRET_ATTR" "$SECRET_VAL" >/dev/null 2>&1; then
     rm -f "$KEYFILE"
     echo 'Clave guardada en el keyring (libsecret/secret-tool).'
   else
@@ -57,6 +69,7 @@ save_key() {
 }
 
 remove_key() {
+  if have_keychain; then security delete-generic-password -a "$(kc_account)" -s "$KC_SERVICE" >/dev/null 2>&1 || true; fi
   if have_secret_tool; then secret-tool clear "$SECRET_ATTR" "$SECRET_VAL" >/dev/null 2>&1 || true; fi
   rm -f "$KEYFILE"
 }
@@ -68,6 +81,7 @@ if [ "$MODE" = selftest ]; then
   tmp="$(mktemp -d)"
   KEYFILE="$tmp/api-key"
   SECRET_VAL="claude-qwen-enterprise-selftest-$$-$(date +%s)"
+  KC_SERVICE="$SECRET_VAL"
   save_key 'dummy-test-only-731' >/dev/null
   roundtrip="$(read_key || true)"
   remove_key
@@ -110,7 +124,9 @@ if [ "$MODE" = status ]; then
   version='<missing>'
   if [ -n "$cli" ]; then version="$("$cli" --version 2>/dev/null || echo '<error>')"; fi
   backend='none'
-  if have_secret_tool && [ -n "$(secret-tool lookup "$SECRET_ATTR" "$SECRET_VAL" 2>/dev/null || true)" ]; then
+  if have_keychain && [ -n "$(security find-generic-password -a "$(kc_account)" -s "$KC_SERVICE" -w 2>/dev/null || true)" ]; then
+    backend='Keychain de macOS (security)'
+  elif have_secret_tool && [ -n "$(secret-tool lookup "$SECRET_ATTR" "$SECRET_VAL" 2>/dev/null || true)" ]; then
     backend='secret-tool (libsecret)'
   elif [ -f "$KEYFILE" ]; then
     backend="archivo $KEYFILE (600)"
@@ -157,12 +173,13 @@ fi
 mkdir -p "$CONFIG"
 
 # Borrar variables heredadas de Anthropic/Claude para que nada interfiera.
+# compgen -A export funciona en bash 3.2 (macOS); compgen -e exige bash 4+.
 while IFS= read -r var; do
   case "$var" in
     ANTHROPIC_*|CLAUDE_CODE_USE_*|CLAUDE_CONFIG_DIR|CLAUDE_CODE_OAUTH_TOKEN|CLAUDE_CODE_OAUTH_REFRESH_TOKEN|DISABLE_LOGIN_COMMAND|DISABLE_LOGOUT_COMMAND)
-      unset "$var" ;;
+      unset "$var" 2>/dev/null || true ;;
   esac
-done < <(compgen -e || true)
+done < <(compgen -A export 2>/dev/null || env | cut -d= -f1)
 
 export CLAUDE_CONFIG_DIR="$CONFIG"
 export ANTHROPIC_BASE_URL="$ENDPOINT"

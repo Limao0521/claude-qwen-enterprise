@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =============================================================================
-#  Instalador de claude-qwen para Linux (Ubuntu 20.04+).
+#  Instalador de claude-qwen para Linux (Ubuntu 20.04+) y macOS.
 #  Uso:
 #    ./install.sh            instala para el usuario actual
 #    ./install.sh --remove   retira shims y app (conserva datos y credencial)
@@ -14,6 +14,7 @@ REMOVE=0
 if [ "${1:-}" = '--remove' ]; then REMOVE=1; fi
 
 SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+OS="$(uname -s)"
 RUNTIME="$HOME/.local/share/claude-qwen-enterprise"
 APP="$RUNTIME/app"
 CONFIG_AGENTS="$RUNTIME/claude-config/agents"
@@ -61,27 +62,43 @@ if [ "$REMOVE" -eq 1 ]; then
   rm -rf "$APP"
   echo 'Comandos claude-qwen retirados y copia de la app eliminada.'
   echo "Los datos de sesion ($RUNTIME/claude-config) y la credencial no se tocaron."
-  echo 'Para borrar la clave: secret-tool clear application claude-qwen-enterprise (si usaste keyring) o rm ~/.config/claude-qwen-enterprise/api-key'
+  if [ "$OS" = Darwin ]; then
+    echo 'Para borrar la clave: security delete-generic-password -s claude-qwen-enterprise (si usaste el Keychain) o rm ~/.config/claude-qwen-enterprise/api-key'
+  else
+    echo 'Para borrar la clave: secret-tool clear application claude-qwen-enterprise (si usaste keyring) o rm ~/.config/claude-qwen-enterprise/api-key'
+  fi
   exit 0
 fi
 
 path_missing=0
 case ":$PATH:" in *":$BIN:"*) ;; *) path_missing=1 ;; esac
 if [ "$path_missing" -eq 1 ]; then
-  for rc in "$HOME/.profile" "$HOME/.bashrc"; do
+  if [ "$OS" = Darwin ]; then
+    # macOS usa zsh por defecto; los usuarios de bash leen ~/.bash_profile.
+    rc_files="$HOME/.zprofile $HOME/.zshrc $HOME/.bash_profile"
+    rc_names='~/.zprofile, ~/.zshrc y ~/.bash_profile'
+  else
+    rc_files="$HOME/.profile $HOME/.bashrc"
+    rc_names='~/.profile y ~/.bashrc'
+  fi
+  for rc in $rc_files; do
     touch "$rc"
     if ! grep -qF '# claude-qwen' "$rc" 2>/dev/null; then
       printf '\nexport PATH="$HOME/.local/bin:$PATH" # claude-qwen\n' >> "$rc"
     fi
   done
-  echo "Se agrego $BIN al PATH en ~/.profile y ~/.bashrc."
+  echo "Se agrego $BIN al PATH en $rc_names."
 fi
 
 if ! command -v claude >/dev/null 2>&1 && [ ! -x "$BIN/claude" ]; then
   echo 'Aviso: no se encontro claude. Instala Claude Code: curl -fsSL https://claude.ai/install.sh | bash'
 fi
 if ! command -v python3 >/dev/null 2>&1; then
-  echo 'Aviso: claude-qwen-test necesita python3 (sudo apt install python3).'
+  if [ "$OS" = Darwin ]; then
+    echo 'Aviso: claude-qwen-test necesita python3 (xcode-select --install).'
+  else
+    echo 'Aviso: claude-qwen-test necesita python3 (sudo apt install python3).'
+  fi
 fi
 
 echo 'Comandos claude-qwen instalados.'

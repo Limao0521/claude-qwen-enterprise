@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =============================================================================
-#  Instalador de un solo comando - claude-qwen (Linux, Ubuntu 20.04+)
+#  Instalador de un solo comando - claude-qwen (Linux Ubuntu 20.04+ y macOS)
 #
 #  Uso (desde cualquier carpeta):
 #    curl -fsSL https://raw.githubusercontent.com/Limao0521/claude-qwen-enterprise/main/install-remote.sh | bash
@@ -26,7 +26,7 @@ if command -v curl >/dev/null 2>&1; then
 elif command -v wget >/dev/null 2>&1; then
   fetch() { wget -qO "$2" "$1"; }
 else
-  echo 'Necesitas curl o wget (sudo apt install curl).' >&2
+  echo 'Necesitas curl o wget (Linux: sudo apt install curl; macOS ya trae curl).' >&2
   exit 1
 fi
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Pruebas de extremo a extremo de claude-qwen en Linux (Ubuntu 20.04+).
+"""Pruebas de extremo a extremo de claude-qwen en Linux (Ubuntu 20.04+) y macOS.
 
 Solo usa la biblioteca estandar de python3. Lo ejecuta claude-qwen.sh en modo
 test; recibe la clave por la variable de entorno ANTHROPIC_API_KEY. Hace
@@ -129,7 +129,7 @@ def print_results():
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Smoke test de claude-qwen (Linux)")
+    parser = argparse.ArgumentParser(description="Smoke test de claude-qwen (Linux/macOS)")
     parser.add_argument("--claude", required=True)
     parser.add_argument("--settings", required=True)
     parser.add_argument("--agents-file", required=True)
