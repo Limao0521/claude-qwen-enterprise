@@ -48,7 +48,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\install.ps1
 bash ./install.sh
 ```
 
-> **Nota macOS:** el soporte de macOS (Keychain, PATH de zsh, compatibilidad con bash 3.2) se desarrolló y verificó con pruebas simuladas desde Windows; pendiente aún de una validación completa en un Mac real. Los comandos y rutas son los mismos que en Linux.
+> **Nota macOS:** el soporte de macOS (Keychain, PATH de zsh, compatibilidad con bash 3.2) se desarrolló y verificó con pruebas simuladas desde Windows; pendiente aún de una validación completa en un Mac real. Los comandos y rutas son los mismos que en Linux. Detalles técnicos, verificación paso a paso en un Mac real y reproducción de las pruebas: [`docs/macos.md`](docs/macos.md).
 
 ## Alta de tu clave (una sola vez)
 
@@ -138,6 +138,7 @@ El comando oficial `claude` sigue intacto; los comandos Qwen son independientes.
 | `qwen-agents.json` | Definición JSON de los cinco subagentes (compartido). |
 | `agents/*.md` | Definiciones Markdown de los subagentes (compartidas). |
 | `.gitattributes` | Fuerza LF en los scripts de Linux/macOS aunque el repo se clone en Windows. |
+| `docs/macos.md` | Documentación técnica del soporte macOS: cambios por archivo y por qué, verificación paso a paso en un Mac real, reproducción de las pruebas con stubs desde Windows y cómo revertir. |
 | `VERIFICATION.md` | Auditoría histórica de la instalación original en Windows (19-oct-2026). |
 
 **Nunca** subas a este repositorio una API key ni el archivo de credenciales oficial de Claude.
